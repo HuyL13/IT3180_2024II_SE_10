@@ -7,6 +7,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 
 import Account from "./pages/account/Account";
 import Admin from "./pages/auth/admin/Admin";
+import UserManagement from "./pages/auth/admin/UserManagement";
 import Guest from "./pages/auth/guest/Guest";
 import Resident from "./pages/auth/resident/Resident";
 import Settings from "./pages/addon/settings/Settings";
@@ -35,7 +36,8 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/account" element={<Account />} />
           <Route path="/guest" element={<Guest />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/rooms" element={<Admin />} />
+          <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/resident" element={<Resident />} />
         </Route>
       </Routes>

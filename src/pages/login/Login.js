@@ -4,133 +4,79 @@ import { useAuth } from "../../context/AuthContext";
 import "../../styles/Login.css";
 import { NavLink } from "react-router-dom";
 
-// Mock database
-const mockUsers = [
-  {
-    username: "adminz",
-    password: "adminz",
-    role: "admin",
-    route: "/admin"
-  },
-  {
-    username: "resident",
-    password: "resident",
-    role: "resident",
-    route: "/resident"
-  },
-  {
-    username: "guest",
-    password: "guest",
-    role: "guest", 
-    route: "/guest"
-  }
-];
-
-// Mock API functions
-const authApi = {
-  login: (credentials) => new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const user = mockUsers.find(u => 
-        u.username === credentials.username && 
-        u.password === credentials.password
-      );
-      
-      user ? resolve(user) : reject(new Error("Email hoặc mật khẩu không đúng!"));
-    }, 1000);
-  }),
-  
-  sendOtp: (email) => new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const userExists = mockUsers.some(u => u.email === email);
-      if(userExists) {
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        console.log("OTP for testing:", otp);
-        resolve(otp);
-      } else {
-        reject(new Error("Email không tồn tại trong hệ thống"));
-      }
-    }, 1000);
-  })
-};
-
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const modalRef = useRef(null);
   const otpInputs = useRef(Array(6).fill(null));
 
-  /// State management
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [modalState, setModalState] = useState({
     show: false,
+    step: 'email',
     email: "",
     message: "",
     otp: Array(6).fill(""),
-    correctOtp: "",
-    isProcessing: false
+    isProcessing: false,
+    correctOtp: false,
+    newPassword: "",
+    confirmPassword: ""
   });
-  
 
-  // Email validation
-  const validateEmail = (email) => 
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.toLowerCase());
-  const [requestHeaders] = useState({
-    'Postman-Token': 'unique-postman-identifier',
-    'Host': 'localhost:22986',
-    'User-Agent': 'Mozilla/5.0'
-  });
-   // Login handler
-   const handleLogin = async (e) => {
+  const requestHeaders = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+  };
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-
+  
     if (!formData.username || !formData.password) {
       setError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu");
       return;
     }
-
+  
     try {
       setLoading(true);
       const response = await fetch("http://localhost:22986/demo/auth/login", {
         method: "POST",
-        headers: {
-          ...requestHeaders,
-          "Content-Type": "application/json",
-          // Thêm các headers cần thiết khác
-          "Accept": "application/json",
-          "Cache-Control": "no-cache",
-          "Connection": "keep-alive"
-        },
+        headers: requestHeaders,
         body: JSON.stringify({
           username: formData.username,
-          password: formData.password
+          password: formData.password,
         }),
       });
-
+  
       const data = await response.json();
-
+      console.log(data);
+  
       if (!response.ok) {
         throw new Error(data.message || "Đăng nhập thất bại");
       }
-
-      // Xử lý kết quả thành công
-      const { token, authenticated } = data.result;
-      
-      // Lưu token vào localStorage
+  
+      const token = data?.result?.token;
+      const roles = data?.result?.roles || [];
+  
+      if (!token || roles.length === 0) {
+        throw new Error("Thông tin xác thực không hợp lệ");
+      }
+  
+      const mainRole = roles[0]?.name?.toLowerCase();
       localStorage.setItem("authToken", token);
-      
-      // Cập nhật context authentication
-      login({
-        authenticated,
-        token,
-        username: formData.username
-      });
-
-      // Chuyển hướng đến trang dashboard
+  
+      // Cập nhật modal sau khi xác thực thành công
+      setModalState((prev) => ({
+        ...prev,
+        show: true,
+        step: "otp",
+        message: "Nhập mã OTP để xác thực",
+        otp: Array(6).fill(""),
+      }));
+  
+      login(mainRole);
       navigate("/dashboard");
-
     } catch (err) {
       setError(err.message);
       localStorage.removeItem("authToken");
@@ -138,103 +84,127 @@ const Login = () => {
       setLoading(false);
     }
   };
-
-  // OTP input handling
-  const handleOtpChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
-    
-    const newOtp = [...modalState.otp];
-    newOtp[index] = value;
-    
-    setModalState(prev => ({
-      ...prev,
-      otp: newOtp,
-      message: newOtp.join("").length === 6 ? "" : prev.message
-    }));
-
-    if (value && index < 5) otpInputs.current[index + 1].focus();
-    if (newOtp.every(d => d) && index === 5) verifyOtp(newOtp.join(""));
-  };
-
-  // OTP verification
-  const verifyOtp = async (enteredOtp) => {
-    setModalState(prev => ({ ...prev, isProcessing: true }));
-    
-    try {
-      if (enteredOtp !== modalState.correctOtp) {
-        throw new Error("Mã OTP không chính xác");
-      }
-      
-      setModalState(prev => ({
-        ...prev,
-        message: "Xác thực thành công! Vui lòng kiểm tra email để đặt lại mật khẩu.",
-        isProcessing: false
-      }));
-      
-      setTimeout(() => {
-        setModalState({
-          show: false,
-          email: "",
-          message: "",
-          otp: Array(6).fill(""),
-          correctOtp: "",
-          isProcessing: false
-        });
-      }, 3000);
-      
-    } catch (err) {
-      setModalState(prev => ({
-        ...prev,
-        message: err.message,
-        otp: Array(6).fill(""),
-        isProcessing: false
-      }));
-      otpInputs.current[0].focus();
-    }
-  };
-
-  // Password reset handler
-  const handlePasswordReset = async (e) => {
-    e.preventDefault();
-    
-    if (!validateEmail(modalState.email)) {
-      setModalState(prev => ({ ...prev, message: "Vui lòng nhập email hợp lệ" }));
+  
+  const handlePasswordReset = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modalState.email)) {
+      setModalState(prev => ({ ...prev, message: "Email không hợp lệ" }));
       return;
     }
 
+    setModalState(prev => ({ ...prev, isProcessing: true }));
+
     try {
-      setModalState(prev => ({ ...prev, isProcessing: true }));
-      const otp = await authApi.sendOtp(modalState.email);
+      const response = await fetch(
+        `http://localhost:22986/demo/auth/request-otp?email=${encodeURIComponent(modalState.email)}`,
+        { method: "POST" }
+      );
+
+      const data = await response.text();
       
+      if (!response.ok) throw new Error(data || "Không thể gửi OTP");
+
       setModalState(prev => ({
         ...prev,
-        correctOtp: otp,
-        message: "Mã OTP đã được gửi đến email của bạn!",
-        isProcessing: false
+        show: true,
+        step: 'otp',
+        message: data,
+        otp: Array(6).fill("")
       }));
-      
-      setTimeout(() => otpInputs.current[0].focus(), 100);
+
     } catch (err) {
+      setModalState(prev => ({ ...prev, message: err.message.replace(/^Error: /, "") }));
+    } finally {
+      setModalState(prev => ({ ...prev, isProcessing: false }));
+    }
+  };
+
+  const verifyOtp = async (otp) => {
+    setModalState(prev => ({ ...prev, isProcessing: true, message: "" }));
+
+    try {
+      const response = await fetch(
+        `http://localhost:22986/demo/auth/verify-otp?email=${encodeURIComponent(modalState.email)}&otp=${encodeURIComponent(otp)}`,
+        { method: 'POST', headers: requestHeaders }
+      );
+
+      const result = await response.text();
+      if (!response.ok) throw new Error(result || "Lỗi xác thực OTP");
+
       setModalState(prev => ({
         ...prev,
-        message: err.message,
-        isProcessing: false
+        message: result,
+        step: 'new_password'
       }));
+      
+    } catch (err) {
+      setModalState(prev => ({ ...prev, message: err.message, isProcessing: false }));
     }
+  };
+  const handlePasswordUpdate = async () => {
+    if (modalState.newPassword !== modalState.confirmPassword) {
+      setModalState(prev => ({ ...prev, message: "Mật khẩu xác nhận không khớp" }));
+      return;
+    }
+  
+    setModalState(prev => ({ ...prev, isProcessing: true }));
+    const email= modalState.email;
+    const otp= modalState.otp.join("");
+    const newPassword= modalState.newPassword;
+    const payload = {
+      email: modalState.email,
+      otp: modalState.otp.join(""),
+      newPassword: modalState.newPassword
+    };
+  
+    try {
+      const response = await fetch(`http://localhost:22986/demo/auth/reset-password?email=${email}&otp=${otp}&newPassword=${newPassword}`, {
+        method: "POST",
+        
+        body: JSON.stringify(payload)
+      });
+  
+      const data = await response.text();
+      
+      if (data.includes("Password reset successful")) {
+        console.log("Cập nhật mật khẩu thành công!");
+      }
+  
+      setModalState(prev => ({
+        ...prev,
+        message: "Cập nhật mật khẩu thành công!",
+        show: false
+      }));
+  
+    } catch (err) {
+      console.log("err");
+      setModalState(prev => ({ ...prev, message: err.message }));
+    } finally {
+      setModalState(prev => ({ ...prev, isProcessing: false }));
+    }
+  };
+  
+  
+
+  const handleOtpChange = (index, value) => {
+    if (!/^\d$/.test(value) && value !== '') return;
+    const otp = [...modalState.otp];
+    otp[index] = value;
+    setModalState(prev => ({ ...prev, otp }));
+
+    if (value && index < 5) otpInputs.current[index + 1].focus();
   };
 
   return (
     <div className="login-container">
       <h2>Đăng nhập hệ thống</h2>
-      
+
       {error && <div className="alert error">{error}</div>}
 
       <form onSubmit={handleLogin}>
         <div className="form-group">
-          
           <input
             type="text"
-            placeholder="Tên dăng nhập"
+            placeholder="Tên đăng nhập"
             value={formData.username}
             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
             disabled={loading}
@@ -242,7 +212,6 @@ const Login = () => {
         </div>
 
         <div className="form-group">
-          
           <input
             type="password"
             placeholder="Mật khẩu"
@@ -257,50 +226,57 @@ const Login = () => {
         </button>
       </form>
 
-      
+      <div className="login-links">
         <NavLink to="/signup">Đăng ký tài khoản</NavLink>
-        <NavLink 
-          onClick={() => setModalState(prev => ({ ...prev, show: true }))}
+        <button 
+          className="forgot-password-btn"
+          onClick={() => setModalState(prev => ({ ...prev, show: true, step: 'email' }))}
         >
           Quên mật khẩu?
-        </NavLink>
-      
+        </button>
+      </div>
 
-      {/* Password Reset Modal */}
       {modalState.show && (
         <div className="modal-overlay" onClick={() => setModalState(prev => ({ ...prev, show: false }))}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Khôi phục mật khẩu</h3>
-            
-            {!modalState.correctOtp ? (
+
+            {modalState.step === 'email' && (
               <>
                 <div className="form-group">
                   <label>Email đăng ký:</label>
                   <input
                     type="email"
                     value={modalState.email}
-                    onChange={(e) => setModalState(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) => setModalState(prev => ({ 
+                      ...prev, 
+                      email: e.target.value,
+                      message: "" 
+                    }))}
                     disabled={modalState.isProcessing}
                   />
                 </div>
-                
+
                 {modalState.message && <div className="alert">{modalState.message}</div>}
-                <div className ="modal-action">
-                <button type ="submit"
-                  onClick={handlePasswordReset}
-                  disabled={modalState.isProcessing}
-                >
-                  {modalState.isProcessing ? <div className="spinner" /> : "Gửi mã OTP"}
-                </button>
-                <button
+
+                <div className="modal-action">
+                  <button
+                    onClick={handlePasswordReset}
+                    disabled={modalState.isProcessing}
+                  >
+                    {modalState.isProcessing ? <div className="spinner" /> : "Gửi mã OTP"}
+                  </button>
+                  <button
                     className="secondary"
                     onClick={() => setModalState(prev => ({ ...prev, show: false }))}
                   >
                     Đóng
                   </button>
-                  </div>
+                </div>
               </>
-            ) : (
+            )}
+
+            {modalState.step === 'otp' && (
               <>
                 <p className="otp-notice">Nhập mã OTP 6 số đã gửi đến {modalState.email}</p>
                 
@@ -308,8 +284,9 @@ const Login = () => {
                   {modalState.otp.map((digit, index) => (
                     <input
                       key={index}
+                      type="tel"
+                      pattern="[0-9]*"
                       ref={el => otpInputs.current[index] = el}
-                      type="text"
                       maxLength="1"
                       value={digit}
                       onChange={(e) => handleOtpChange(index, e.target.value)}
@@ -332,7 +309,57 @@ const Login = () => {
                   >
                     {modalState.isProcessing ? <div className="spinner" /> : "Xác nhận"}
                   </button>
-                  
+                  <button
+                    className="secondary"
+                    onClick={() => setModalState(prev => ({ ...prev, show: false, step: 'email' }))}
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </>
+            )}
+
+            {modalState.step === 'new_password' && (
+              <div className="password-reset-form">
+                <div className="form-group">
+                  <label>Mật khẩu mới:</label>
+                  <input
+                    type="password"
+                    value={modalState.newPassword}
+                    onChange={(e) => setModalState(prev => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                      message: ""
+                    }))}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Xác nhận mật khẩu:</label>
+                  <input
+                    type="password"
+                    value={modalState.confirmPassword}
+                    onChange={(e) => setModalState(prev => ({
+                      ...prev,
+                      confirmPassword: e.target.value,
+                      message: ""
+                    }))}
+                  />
+                </div>
+
+                {modalState.message && (
+                  <div className={`alert ${modalState.message.includes("thành công") ? "success" : "error"}`}>
+                    {modalState.message}
+                  </div>
+                )}
+
+                <div className="modal-actions">
+                  <button
+  onClick={handlePasswordUpdate}
+  
+>
+   "Đổi mật khẩu"
+</button>
                   <button
                     className="secondary"
                     onClick={() => setModalState(prev => ({ ...prev, show: false }))}
@@ -340,7 +367,7 @@ const Login = () => {
                     Đóng
                   </button>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

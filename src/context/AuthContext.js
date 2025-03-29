@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   // Định nghĩa các route ở phạm vi component
   const roleRoutes = {
     admin: ["/admin", "/dashboard"],
-    resident: ["/resident"],
+    user: ["/resident"],
     guest: ["/guest", "/join-resident"],
   };
 

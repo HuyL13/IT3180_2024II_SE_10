@@ -19,10 +19,12 @@
 
 .room-card {
   width: 30vw;
+  height:20vh;
   display: flex;
-  flex-direction: row;
+  flex-direction:center;
+
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin: 10px 0;
 }
 
@@ -30,6 +32,8 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
+  margin-top:10px;
+  margin-bottom:10px;
 }
 
 .admin-overlay, .admin-layout {
@@ -151,8 +155,8 @@
 /* Card thêm phòng giống các card phòng khác */
 .add-room-card {
   cursor: pointer;
-  width: 30vw;
-  background: #ffffff;
+  
+  
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
@@ -160,7 +164,7 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin: 10px 0;
   transition: all 0.3s ease;
 }
@@ -171,15 +175,77 @@
   border-left-style: dashed;
 }
 
+
+
+
+.name{
+  color:#007bff;
+}
+
 .add-room-detail {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  
+  justify-content: center; 
+  align-items: center; 
+  width: 25vw;
+  height: 23vh;
+  background: rgba(233, 230, 230, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid #007bff;
 }
 
 .add-room-icon {
-  font-size: 2.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-size: 10vw;
   color: #007bff;
   transition: all 0.3s ease;
+  
+  /* Đảm bảo icon là một flex item để căn giữa chính xác */
+  flex-shrink: 0;
+}
+/* Hiệu ứng loading ban đầu */
+.initial-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 1000;
+}
+
+/* Loading khi fetch dữ liệu */
+.page-loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1000;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

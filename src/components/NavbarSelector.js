@@ -18,7 +18,7 @@ const NavbarSelector = () => {
     const protectedPaths = ["/settings", "/account"];
     const rolePaths = {
       admin: ["/admin", "/dashboard", ...protectedPaths],
-      resident: ["/resident", ...protectedPaths],
+      user: ["/resident", ...protectedPaths],
       guest: ["/guest", "/join-resident", ...protectedPaths]
     };
     return rolePaths[currentRole] || [];
@@ -52,7 +52,7 @@ const NavbarSelector = () => {
 
   const navbarComponents = {
     admin: <NavbarAdmin handleLogout={handleLogout} />,
-    resident: <NavbarResident handleLogout={handleLogout} />,
+    user: <NavbarResident handleLogout={handleLogout} />,
     guest: <NavbarGuest handleLogout={handleLogout} />,
     default: <NavbarDefault />
   };
