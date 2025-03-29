@@ -49,6 +49,12 @@ const NavbarAdmin = ({ username, handleLogout }) => {
                 <NavLink to="/admin/users" className="dropdown-item">
                   Quản lý Người dùng
                 </NavLink>
+                <NavLink to="/admin/fees" className="dropdown-item">
+                  Quản lí phí
+                </NavLink>
+                <NavLink to="/admin/guests" className="dropdown-item">
+                  Phê duyệt
+                </NavLink>
                 <NavLink to="/admin/reports" className="dropdown-item">
                   Báo cáo
                 </NavLink>

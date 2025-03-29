@@ -2,11 +2,17 @@ import React, { useEffect, useState } from "react";
 import "../../../styles/Admin.css";
 
 const Admin = () => {
+  const [roomId, setRoomId] = useState(null);
+  const [users, setUsers] = useState([]);
+  
   const [rooms, setRooms] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showUserInputModal, setShowUserInputModal] = useState(false);
+const [newUsername, setNewUsername] = useState("");
+const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [loading, setLoading] = useState({
     page: true,
@@ -46,7 +52,7 @@ const Admin = () => {
     setSelectedRoom(room);
     setShowModal(true);
   };
-
+//tao phong
   const createRoom = async (roomData) => {
     try {
       const token = localStorage.getItem("authToken");
@@ -73,7 +79,7 @@ const Admin = () => {
       throw error;
     }
   };
-
+//them phong
   const handleAddRoom = async () => {
     if (!newRoom.roomNumber.trim() || !newRoom.floor.trim() || !newRoom.peopleCount.trim()) {
       setError("Vui lòng nhập đầy đủ thông tin!");
@@ -98,7 +104,7 @@ const Admin = () => {
       setLoading((prev) => ({ ...prev, form: false }));
     }
   };
-
+//lay data moi phong
   const fetchRooms = async () => {
     setLoading((prev) => ({ ...prev, page: true }));
     try {
@@ -134,7 +140,7 @@ const Admin = () => {
       return () => clearInterval(intervalId);
     }
   }, [loading.initial]);
-
+//xoa phong
   const deleteRoom = async (roomId) => {
     try {
       const token = localStorage.getItem("authToken");
@@ -156,145 +162,65 @@ const Admin = () => {
 const [showUserModal, setShowUserModal] = useState(false);
 
 // Sửa hàm showAllUser
-const showAllUser = async (roomId) => {
+const showRoomUser = async (roomNumber) => {
   try {
+    console.log("!");
     const token = localStorage.getItem("authToken");
-    const response = await fetch(`http://localhost:22986/demo/admin/room/${roomId}`, { // Sửa endpoint
+    const response = await fetch(`http://localhost:22986/demo/admin/room/users?roomNumber=${roomNumber}`, { // Sửa endpoint
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
+        
+        "Accept": "application/json",
         "Authorization": `Bearer ${token}`,
       },
     });
-
-    if (!response.ok) throw new Error("Không thể lấy danh sách người dùng");
-
+    console.log(`http://localhost:22986/demo/admin/room/users?roomId=${roomNumber}`);
+    console.log("1");
+    
+    console.log("2");
     const data = await response.json();
+    console.log(roomNumber);
+    console.log("  ");
     console.log(data);
-    setRoomUsers(data.result || []); // Giả sử API trả về {result: [...]}
+    setRoomUsers(data); // Giả sử API trả về {result: [...]}
+    console.log(data[0]);
     setShowUserModal(true); // Sử dụng state riêng cho modal người dùng
   } catch (error) {
+    console.log("sai");
     setError(error.message);
   }
 };
-//thêm
-  
-const createUser = async (userData) => {
+const addRoomUser = async () => {
   try {
     const token = localStorage.getItem("authToken");
-    const response = await fetch("http://localhost:22986/demo/admin/users", {
+    const response = await fetch(`http://localhost:22986/demo/admin/room/addUser`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify(userData),
+      body: JSON.stringify({
+        roomNumber: selectedRoomNumber,
+        username: newUsername, // Giả sử API cần username thay vì userId
+      }),
     });
-    if (!response.ok) throw new Error("Không thể tạo người dùng");
-    return await response.json();
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Thêm user thất bại");
+
+    // Cập nhật lại danh sách user
+    await showRoomUser(selectedRoomNumber);
+    setNewUsername("");
+    setShowUserInputModal(false);
   } catch (error) {
-    console.error("Lỗi khi tạo người dùng:", error);
+    console.error("Lỗi khi thêm user:", error);
+    setError(error.message);
   }
 };
-
-const getUsers = async () => {
-  try {
-    const token = localStorage.getItem("authToken");
-    const response = await fetch("http://localhost:22986/demo/admin/users", {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) throw new Error("Không thể lấy danh sách người dùng");
-    return await response.json();
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách người dùng:", error);
-  }
+const handleOpenAddUser = (roomNumber) => {
+  setSelectedRoomNumber(roomNumber);
+  setShowUserInputModal(true);
 };
-
-const getUserInfo = async (userId) => {
-  try {
-    const token = localStorage.getItem("authToken");
-    const response = await fetch(`http://localhost:22986/demo/admin/users/${userId}`, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) throw new Error("Không thể lấy thông tin người dùng");
-    return await response.json();
-  } catch (error) {
-    console.error("Lỗi khi lấy thông tin người dùng:", error);
-  }
-};
-
-const getMyInfo = async () => {
-  try {
-    const token = localStorage.getItem("authToken");
-    const response = await fetch("http://localhost:22986/demo/admin/users/my-info", {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) throw new Error("Không thể lấy thông tin cá nhân");
-    return await response.json();
-  } catch (error) {
-    console.error("Lỗi khi lấy thông tin cá nhân:", error);
-  }
-};
-
-const deleteUser = async (userId) => {
-  try {
-    const token = localStorage.getItem("authToken");
-    const response = await fetch(`http://localhost:22986/demo/admin/users/${userId}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) throw new Error("Không thể xóa người dùng");
-    return await response.json();
-  } catch (error) {
-    console.error("Lỗi khi xóa người dùng:", error);
-  }
-};
-
-const updateUser = async (userId, userData) => {
-  try {
-    const token = localStorage.getItem("authToken");
-    const response = await fetch(`http://localhost:22986/demo/admin/users/${userId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify(userData),
-    });
-    if (!response.ok) throw new Error("Không thể cập nhật thông tin người dùng");
-    return await response.json();
-  } catch (error) {
-    console.error("Lỗi khi cập nhật thông tin người dùng:", error);
-  }
-};
-
-const activateUser = async (userId) => {
-  try {
-    const token = localStorage.getItem("authToken");
-    const response = await fetch(`http://localhost:22986/demo/admin/users/${userId}/activate`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) throw new Error("Không thể kích hoạt tài khoản");
-    return await response.json();
-  } catch (error) {
-    console.error("Lỗi khi kích hoạt tài khoản:", error);
-  }
-};
-
   return (
     <div className="admin-overlay">
       {loading.initial && (
@@ -344,13 +270,20 @@ const activateUser = async (userId) => {
                 </button>
                 <button
                   className="btn btn-light"
-                  onClick={() => showAllUser(room.id)}
+                  onClick={() => showRoomUser(room.roomNumber)}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                 >
                   &#x1F465; {/* Trash can icon */}
                 </button>
-
+                <button
+  className="btn btn-light"
+  onClick={() => handleOpenAddUser(room.roomNumber)}
+  onMouseEnter={handleMouseEnter}
+  onMouseLeave={handleMouseLeave}
+>
+  &#x2795;
+</button>
                 {showTooltip && (
                   <div
                     className="tooltip"
@@ -442,8 +375,7 @@ const activateUser = async (userId) => {
             {roomUsers.map((user) => (
               <li key={user.id} className="user-item">
                 <div className="user-info">
-                  <p><strong>Tên:</strong> {user.fullName}</p>
-                  
+                  <p className ="name"><strong>Tên:</strong> {user}</p>
                 </div>
               </li>
             ))}
@@ -455,6 +387,35 @@ const activateUser = async (userId) => {
     </div>
   </div>
 )}
+{showUserInputModal && (
+  <div className="modal-overlay-admin" onClick={() => setShowUserInputModal(false)}>
+    <div className="modal-content-admin" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-header">
+        <h4>Thêm người dùng vào phòng {selectedRoomNumber}</h4>
+        <button className="close-btn" onClick={() => setShowUserInputModal(false)}>&times;</button>
+      </div>
+      <div className="modal-body">
+        <input
+          type="text"
+          placeholder="Nhập username"
+          value={newUsername}
+          onChange={(e) => setNewUsername(e.target.value)}
+          className="form-control mb-3"
+        />
+        {error && <div className="alert alert-danger">{error}</div>}
+        <div className="form-actions">
+          <button className="btn btn-success" onClick={addRoomUser}>
+            Thêm
+          </button>
+          <button className="btn btn-danger" onClick={() => setShowUserInputModal(false)}>
+            Hủy
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
       </div>
     </div>
