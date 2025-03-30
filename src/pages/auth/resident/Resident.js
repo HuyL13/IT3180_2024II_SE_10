@@ -16,41 +16,40 @@ const Resident = () => {
   const fetchFees = async () => {
     if (isFetched.current) return;
     isFetched.current = true;
-
+  
     try {
-      console.log("Fetching API...");
       const token = localStorage.getItem("authToken");
-      console.log(token);
-      if (!token) {
-        throw new Error("Auth token not found!");
-      }
-      
-      const response = await fetch("http://localhost:22986/users/unpaid", {
+      if (!token) throw new Error("Auth token not found!");
+  
+      const response = await fetch(`http://localhost:22986/demo/users/unpaid`, {
+        mode: "cors",
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
+        headers: { 
+          "Accept": "application/json",
           "Content-Type": "application/json",
-        },
+          "Authorization": `Bearer ${token}` },
       });
-
-      console.log("Response status:", response.status);
-      if (!response.ok) {
-        // Nếu response không ok, in nội dung trả về để debug
-        const errorText = await response.text();
-        throw new Error(`HTTP error! Status: ${response.status}. Response: ${errorText}`);
-      }
-
+  
+      
       const data = await response.json();
+      console.log(data);
       console.log("API Response:", data);
-      setFees(data);
+  
+      // Check if response data is an array
+      if (!Array.isArray(data)) {
+        throw new Error("API response is not an array");
+        
+      }
+  
+      setFees(data); // Data is confirmed to be an array
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err.message);
+      setFees([]); // Reset to empty array on error
     } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchFees();
   }, []);
@@ -67,12 +66,14 @@ const Resident = () => {
     <div className="resident-overlay">
       <div className="resident-layout">
         <div className="qr-code">
+          {showQR?null:
           <button className="btn btn-primary" onClick={() => setShowQR(!showQR)}>
-            {showQR ? "Ẩn QR Code" : "Hiển thị QR Code"}
+            Hiển thị QR Code
           </button>
+          }
           {showQR && (
             <img
-              src="https://via.placeholder.com/150"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Superqr.svg/500px-Superqr.svg.png"
               alt="QR Code"
               className="qr-image"
             />
@@ -149,6 +150,32 @@ const Resident = () => {
           </div>
         </div>
       )}
+      {/* Modal QR Code */}
+      {showQR && (
+          <div className="modal-overlay" onClick={() => setShowQR(false)}>
+            <div className="modal-content qr-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h4>QR Code Thanh Toán</h4>
+                <button 
+                  className="close-btn" 
+                  onClick={() => setShowQR(false)}
+                >
+                  &times;
+                </button>
+              </div>
+              <div className="modal-body">
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Superqr.svg/500px-Superqr.svg.png"
+                  alt="QR Code"
+                  className="qr-image"
+                />
+                <div className="payment-instruction">
+                  <p>Quét QR code để thanh toán qua ứng dụng ngân hàng</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 };

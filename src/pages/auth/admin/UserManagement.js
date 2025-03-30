@@ -8,6 +8,7 @@ const UserManagement = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showMakeAdminModal, setShowMakeAdminModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState({
     initial: true,
@@ -28,7 +29,9 @@ const UserManagement = () => {
   const [editUser, setEditUser] = useState({
     email: "",
     firstName: "",
-    lastName: ""
+    lastName: "",
+    password: "", // Thêm trường password
+  dob: "" // Thêm trường ngày sinh
   });
 
   // Effect cho loading ban đầu
@@ -151,7 +154,10 @@ const UserManagement = () => {
       setLoading(prev => ({ ...prev, form: false }));
     }
   };
-
+  const isValidDate = (dateString) => {
+    return !isNaN(new Date(dateString).getTime());
+  };
+  
   // Xóa user
   const deleteUser = async (userId) => {
     try {
@@ -171,7 +177,6 @@ const UserManagement = () => {
     }
   };
 
-  // Cập nhật user
   const updateUser = async (userId, updateData) => {
     try {
       const token = localStorage.getItem("authToken");
@@ -179,22 +184,31 @@ const UserManagement = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json"
         },
         body: JSON.stringify({
-            email: updateData.email,
-            firstName: updateData.firstName,
-            lastName: updateData.lastName
-          }
-          )
+          password: updateData.password,
+          firstName: updateData.firstName,
+          lastName: updateData.lastName,
+          email: updateData.email,
+          dob: updateData.dob
+        })
       });
-
-      if (!response.ok) throw new Error("Update failed");
-      return await response.json();
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Update failed");
+      }
+      
+      const data = await response.json();
+      console.log("Update user response: ", data);
+      return data;
     } catch (error) {
       throw error;
     }
   };
+  
 
   // Xử lý cập nhật
   const handleUpdateUser = async () => {
@@ -243,6 +257,39 @@ const UserManagement = () => {
       throw new Error(`Failed to fetch user details: ${error.message}`);
     }
   };
+
+  const makeAdmin = async (userId) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(
+        `http://localhost:22986/demo/users/admin/${userId}/make-admin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to make admin");
+      }
+  
+      // Cập nhật role trong state
+      setUsers(users.map(user => 
+        user.id === userId 
+          ? { ...user, roles: [...user.roles, { name: "ADMIN" }] } 
+          : user
+      ));
+      
+      setShowMakeAdminModal(false);
+      setError("");
+    } catch (error) {
+      setError(error.message);
+    }
+  };
   return (
     <div className="admin-overlay">
       {loading.initial && (
@@ -283,27 +330,41 @@ const UserManagement = () => {
                     setShowDetailModal(true);
                   }}
                 >
-                  Detail
+                  &#128269;
                 </button>
                 <button
-                  className="btn btn-edit"
-                  onClick={() => {
-                    setSelectedUser(user);
-                    setEditUser({
-                      email: user.email,
-                      firstName: user.firstName,
-                      lastName: user.lastName
-                    });
-                    setShowEditModal(true);
-                  }}
-                >
-                  Edit
-                </button>
+  className="btn btn-edit"
+  onClick={() => {
+    setSelectedUser(user);
+    setEditUser({
+      password: "", // Thêm trường password
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      dob: user.dob && user.dob !== "N/A" && isValidDate(user.dob)
+        ? new Date(user.dob).toISOString().split('T')[0]
+        : ""
+    });
+    setShowEditModal(true);
+  }}
+>
+  &#128394;
+</button>
                 <button
                   className="btn btn-danger"
                   onClick={() => deleteUser(user.id)}
                 >
-                  Delete
+                  &#128465;
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setShowMakeAdminModal(true);
+                  }}
+                >
+                  &#8648;
+
                 </button>
               </div>
             </div>
@@ -348,6 +409,19 @@ const UserManagement = () => {
                 value={newUser.lastName}
                 onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
               />
+              <input
+        type="password"
+        placeholder="New Password"
+        value={newUser.password}
+        onChange={(e) => setEditUser({ ...editUser, password: e.target.value })}
+      />
+      
+      {/* Thêm trường ngày sinh */}
+      <input
+        type="date"
+        value={newUser.dob}
+        onChange={(e) => setEditUser({ ...editUser, dob: e.target.value })}
+      />
               <div className="modal-actions">
                 <button
                   className="btn btn-success"
@@ -391,6 +465,17 @@ const UserManagement = () => {
                 value={editUser.lastName}
                 onChange={(e) => setEditUser({ ...editUser, lastName: e.target.value })}
               />
+              <input
+        type="password"
+        placeholder="Password"
+        value={editUser.password}
+        onChange={(e) => setEditUser({ ...editUser, password: e.target.value })} 
+      />
+      <input
+        type="date"
+        value={editUser.dob}
+        onChange={(e) => setEditUser({ ...editUser, dob: e.target.value })} 
+      />
               <div className="modal-actions">
                 <button
                   className="btn btn-success"
@@ -466,6 +551,33 @@ const UserManagement = () => {
       >
         Close
       </button>
+    </div>
+  </div>
+)}
+
+{/* Modal Make Admin */}
+{showMakeAdminModal && selectedUser && (
+  <div className="modal-overlay-admin" onClick={() => setShowMakeAdminModal(false)}>
+    <div className="modal-content-admin" onClick={(e) => e.stopPropagation()}>
+      <h3>Confirm Admin Promotion</h3>
+      <p>
+        Are you sure you want to make {selectedUser.username} ({selectedUser.email}) an admin?
+      </p>
+      {error && <div className="error-message">{error}</div>}
+      <div className="modal-actions">
+        <button
+          className="btn btn-warning"
+          onClick={() => makeAdmin(selectedUser.id)}
+        >
+          Confirm
+        </button>
+        <button
+          className="btn btn-cancel"
+          onClick={() => setShowMakeAdminModal(false)}
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   </div>
 )}
