@@ -14,28 +14,16 @@ const NavbarSelector = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Hàm chuẩn hóa roles thành mảng và chuyển về chữ hoa
-  const normalizeRoles = () => {
-    if (!roles) return [];
-    if (Array.isArray(roles)) {
-      return roles.map(role => role.toUpperCase());
-    }
-    if (typeof roles === "string") {
-      // Giả sử các role được phân tách bằng dấu phẩy
-      return roles.split(",").map(r => r.trim().toUpperCase());
-    }
-    return [];
-  };
-
-  // Xác định loại navbar dựa trên mảng roles
+  // Xác định loại navbar dựa trên roles đã chuẩn hóa
   const determineNavbarType = () => {
-    const rolesArray = normalizeRoles();
-    if (rolesArray.includes("ADMIN") && rolesArray.includes("USER")) {
-      return "user_admin";
-    }
-    if (rolesArray.includes("ADMIN")) return "admin";
-    if (rolesArray.includes("USER")) return "user";
-    if (rolesArray.includes("GUEST")) return "guest";
+    console.log("dede",roles);
+    if (!Array.isArray(roles) || roles.length === 0) return "default";
+    
+    // Nếu có cả ADMIN và USER, trả về "user_admin"
+    if (roles.includes("ADMIN") && roles.includes("USER")) return "user_admin";
+    if (roles.includes("ADMIN")) return "admin";
+    if (roles.includes("USER")) return "user";
+    if (roles.includes("GUEST")) return "guest";
     return "default";
   };
 
@@ -45,6 +33,7 @@ const NavbarSelector = () => {
       return;
     }
     const newNavbarType = determineNavbarType();
+    console.log("Navbar Type Set:", newNavbarType);
     setNavbarType(newNavbarType);
   }, [roles, isAuthenticated, setNavbarType]);
 
@@ -54,7 +43,7 @@ const NavbarSelector = () => {
     navigate("/login");
   };
 
-  // Ẩn navbar ở trang chủ nếu cần
+  // Ẩn navbar trên trang chủ nếu cần
   if (["/"].includes(location.pathname)) return null;
 
   const navbarComponents = {

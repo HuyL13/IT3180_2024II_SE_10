@@ -10,6 +10,7 @@ const UserManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showMakeAdminModal, setShowMakeAdminModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [userInfo, setUserInfo] =useState(null); 
   const [loading, setLoading] = useState({
     initial: true,
     page: false,
@@ -290,6 +291,38 @@ const UserManagement = () => {
       setError(error.message);
     }
   };
+
+  //fetch
+
+  useEffect(() => {
+      const fetchUserInfo = async () => {
+        try {
+          const token = localStorage.getItem('authToken');
+          const response = await fetch('http://localhost:22986/demo/users/my-info', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          console.log("1");
+          
+          console.log("1");
+          const data = await response.json();
+          console.log(data);
+          if (data.code !== 0) {
+            throw new Error('Lỗi trong response API');
+          }
+  
+          setUserInfo(data.result);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchUserInfo();
+    }, []);
   return (
     <div className="admin-overlay">
       {loading.initial && (
@@ -350,12 +383,20 @@ const UserManagement = () => {
 >
   &#128394;
 </button>
-                <button
-                  className="btn btn-danger"
-                  onClick={() => deleteUser(user.id)}
-                >
-                  &#128465;
-                </button>
+{userInfo.roles &&
+  Array.isArray(userInfo.roles) &&
+  userInfo.roles.length === 1 &&
+  userInfo.roles[0].name==="ADMIN" && (
+   
+    <button
+      className="btn btn-danger"
+      onClick={() => deleteUser(user.id)}
+    >
+      &#128465;
+    </button>
+    
+)}
+
                 <button
                   className="btn btn-danger"
                   onClick={() => {

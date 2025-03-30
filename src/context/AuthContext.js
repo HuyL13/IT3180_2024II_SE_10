@@ -17,33 +17,78 @@ export const AuthProvider = ({ children }) => {
   const location = useLocation();
   const { setNavbarType } = useNavbar();
 
-  // Định nghĩa các route cho mỗi role (roleRoutes được xác định theo role ưu tiên)
   const roleRoutes = {
     admin: ["/admin", "/dashboard"],
     user: ["/resident"],
     guest: ["/guest", "/join-resident"],
+    user_admin: ["/admin/dashboard", "/resident"]
   };
 
   const commonAuthRoutes = ["/settings", "/account"];
 
-  // Lưu trữ user với roles là mảng, mặc định là guest
   const [user, setUser] = useState(() => {
-    return JSON.parse(localStorage.getItem("user")) || { 
-      isAuthenticated: false, 
-      roles: ["guest"] 
+    const savedUser = JSON.parse(localStorage.getItem("user")) || {
+      isAuthenticated: false,
+      roles: ["GUEST"],
+      info: null
     };
+    return savedUser;
   });
 
+  // Hàm chuẩn hóa danh sách vai trò: nếu role là object, lấy role.name; nếu là chuỗi, giữ nguyên.
+  const normalizeRoles = (roles) => {
+    console.log("Raw roles from storage:", roles);
+    if (!Array.isArray(roles)) {
+      return [String(roles).toUpperCase()];
+    }
+    return roles
+      .map(role =>
+        typeof role === "object" && role.name
+          ? role.name.toUpperCase()
+          : String(role).toUpperCase()
+      )
+      .filter(role => ["ADMIN", "USER", "GUEST"].includes(role));
+  };
+
   useEffect(() => {
+    const savedRoles = JSON.parse(localStorage.getItem("roles")) || ["GUEST"];
+    console.log("Saved roles from localStorage:", savedRoles);
+    const normalizedRoles = normalizeRoles(savedRoles);
+    setUser(prev => ({
+      ...prev,
+      roles: normalizedRoles,
+      isAuthenticated: normalizedRoles.length > 0 && !normalizedRoles.includes("GUEST")
+    }));
+  }, []);
+
+  // Trả về danh sách vai trò chính dưới dạng mảng (ví dụ: ["admin", "user"])
+  const determineMainRole = (roles) => {
+    console.log("All roles:", roles);
+    if (!Array.isArray(roles)) return ["guest"];
+
+    let mainRoles = [];
+    if (roles.includes("ADMIN")) mainRoles.push("admin");
+    if (roles.includes("USER")) mainRoles.push("user");
+    if (mainRoles.length === 0) mainRoles.push("guest");
+
+    return mainRoles;
+  };
+
+  const getAllowedRoutes = (roles) => {
+    const mainRoles = determineMainRole(roles);
+    console.log("Determined main roles:", mainRoles);
+    const combinedRoutes = mainRoles.flatMap(role => roleRoutes[role] || []);
+    return [...new Set([...combinedRoutes, ...commonAuthRoutes])];
+  };
+
+  useEffect(() => {
+    console.log("Current user roles:", user.roles);
     localStorage.setItem("user", JSON.stringify(user));
-    if (user.isAuthenticated && Array.isArray(user.roles)) {
-      // Nếu có cả ADMIN và USER thì ưu tiên "user_admin"
-      if (user.roles.includes("ADMIN") && user.roles.includes("USER")) {
-        setNavbarType("user_admin");
-      } else {
-        // Nếu không, dùng role đầu tiên (chuyển về chữ thường)
-        setNavbarType(user.roles[0].toLowerCase());
-      }
+
+    if (user.isAuthenticated) {
+      let navbarRoles = determineMainRole(user.roles);
+      console.log("Navbar type set to:", navbarRoles);
+      setNavbarType(navbarRoles);
     } else {
       setNavbarType("default");
     }
@@ -51,51 +96,51 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const currentPath = location.pathname;
-    const publicRoutes = ["/settings", "/login", "/signup", "/lobby", "/"];
-    
-    // Nếu đã đăng nhập mà truy cập trang login/signup thì chuyển hướng về trang chủ của role đó
-    if (user.isAuthenticated && ["/login", "/signup"].includes(currentPath)) {
-      navigate(roleRoutes[user.roles[0].toLowerCase()][0], { replace: true });
-      return;
-    }
-
-    if (commonAuthRoutes.some(route => currentPath.startsWith(route))) {
-      if (!user.isAuthenticated) {
-        navigate(`/login?redirect=${encodeURIComponent(currentPath)}`, { replace: true });
-        return;
-      }
-      return;
-    }
+    const publicRoutes = ["/login", "/signup", "/lobby", "/"];
 
     if (user.isAuthenticated) {
-      const allowedRoutes = [
-        ...roleRoutes[user.roles[0].toLowerCase()],
-        ...commonAuthRoutes
-      ];
-      const isAllowed = allowedRoutes.some(route => currentPath.startsWith(route));
-      if (!isAllowed) {
-        navigate("/404", { replace: true });
+      if (["/login", "/signup"].includes(currentPath)) {
+        navigate(getAllowedRoutes(user.roles)[0] || "/", { replace: true });
         return;
       }
-    }
 
-    if (!user.isAuthenticated && !publicRoutes.includes(currentPath)) {
-      navigate("/login", { replace: true });
-      return;
+      const allowedRoutes = getAllowedRoutes(user.roles);
+      const isAllowed = allowedRoutes.some(route => currentPath.startsWith(route));
+
+      if (!isAllowed) {
+        navigate("/404", { replace: true });
+      }
+    } else {
+      if (!publicRoutes.includes(currentPath)) {
+        navigate(`/login?redirect=${encodeURIComponent(currentPath)}`, { replace: true });
+      }
     }
   }, [user, location.pathname, navigate]);
 
-  // Hàm login nhận vào mảng role, ví dụ: ["ADMIN", "USER"]
   const login = (roles, redirectUrl) => {
-    const targetPath = redirectUrl || roleRoutes[roles[0].toLowerCase()][0];
-    setUser({ isAuthenticated: true, roles });
+    const normalizedRoles = normalizeRoles(roles);
+    const targetPath = redirectUrl || getAllowedRoutes(normalizedRoles)[0] || "/";
+
+    localStorage.setItem("roles", JSON.stringify(normalizedRoles));
+
+    setUser({
+      isAuthenticated: true,
+      roles: normalizedRoles,
+      info: null
+    });
+
     navigate(targetPath, { replace: true });
   };
 
   const logout = () => {
-    setUser({ isAuthenticated: false, roles: ["guest"] });
-    navigate("/login", { replace: true });
+    setUser({
+      isAuthenticated: false,
+      roles: ["GUEST"],
+      info: null
+    });
     localStorage.removeItem("user");
+    localStorage.removeItem("roles");
+    navigate("/login", { replace: true });
   };
 
   return (

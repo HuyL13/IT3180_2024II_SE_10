@@ -1,0 +1,90 @@
+/* NavbarUser_Admin.css */
+
+/* Tùy chỉnh nền navbar (nếu cần) */
+.custom-navbar {
+    /* Có thể thêm padding, margin, font-size,... tùy ý */
+  }
+  
+  /* Công tắc chuyển đổi */
+  .toggle-switch {
+    display: flex;
+    align-items: center;
+  }
+  
+  /* Dropdown cho admin */
+  .admin-dropdown {
+    position: relative;
+  }
+  
+  .admin-dropdown .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 10rem;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    z-index: 1000;
+    padding: 0.5rem 0;
+  }
+  
+  /* Các mục trong dropdown */
+  .admin-dropdown .dropdown-item {
+    display: block;
+    padding: 0.25rem 1.5rem;
+    color: #333;
+    text-decoration: none;
+  }
+  
+  .admin-dropdown .dropdown-item:hover {
+    background-color: #f8f9fa;
+  }
+  
+  /* Các liên kết navbar chung */
+  .navbar-nav .nav-link {
+    margin-right: 1rem;
+  }
+  
+  /* Settings icon tùy chỉnh */
+  .settings-icon {
+    font-size: 1.2rem;
+  }
+/* NavbarUser_Admin.css */
+.dropdown-menu {
+    display: block; /* Bắt buộc hiển thị */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    min-width: 10rem;
+    padding: 0.5rem 0;
+    margin: 0;
+    list-style: none;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+  }
+  
+  .dropdown-menu li {
+    padding: 0;
+  }
+  
+  .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.25rem 1.5rem;
+    clear: both;
+    color: #212529;
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+    text-decoration: none;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f8f9fa;
+  }
+    

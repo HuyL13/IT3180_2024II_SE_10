@@ -56,17 +56,20 @@ const Login = () => {
         throw new Error(data.message || "Đăng nhập thất bại");
       }
   
+      // Lấy token và roles từ API
       const token = data?.result?.token;
       const roles = data?.result?.roles || [];
+      console.log("login",roles);
   
       if (!token || roles.length === 0) {
         throw new Error("Thông tin xác thực không hợp lệ");
       }
   
-      const mainRole = roles[0]?.name?.toLowerCase();
+      // Lưu token và toàn bộ roles vào localStorage
       localStorage.setItem("authToken", token);
+      localStorage.setItem("userRoles", JSON.stringify(roles));
   
-      // Cập nhật modal sau khi xác thực thành công
+      // Cập nhật modal hiển thị OTP để xác thực (nếu cần)
       setModalState((prev) => ({
         ...prev,
         show: true,
@@ -75,15 +78,18 @@ const Login = () => {
         otp: Array(6).fill(""),
       }));
   
-      login(mainRole);
+      // Gọi hàm login và chuyển hướng
+      login(roles);
       navigate("/dashboard");
     } catch (err) {
+      console.log("sai rồi");
       setError(err.message);
       localStorage.removeItem("authToken");
     } finally {
       setLoading(false);
     }
   };
+  
   
   const handlePasswordReset = async () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(modalState.email)) {
