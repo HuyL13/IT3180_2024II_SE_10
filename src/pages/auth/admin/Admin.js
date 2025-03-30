@@ -25,7 +25,7 @@ const Admin = () => {
     peopleCount: "",
   });
   const [roomUsers, setRoomUsers] = useState([]);
-
+  const [fullRoom,setFullRoom] = useState([]);
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading((prev) => ({ ...prev, initial: false }));
@@ -118,6 +118,8 @@ const Admin = () => {
       });
       if (!response.ok) throw new Error("Lỗi khi lấy danh sách phòng");
       const data = await response.json();
+      console.log("có id ko",data);
+      setFullRoom(data);
       const formattedRooms = data.map((room) => ({
         ...room,
         floor: room.floor ?? "Chưa cập nhật",
@@ -213,9 +215,9 @@ const Admin = () => {
     setShowUserInputModal(true);
   };
 
-  // Hàm xóa user khỏi phòng
   const handleRemoveUser = async (roomId, userId) => {
     try {
+      
       const token = localStorage.getItem("authToken");
       const response = await fetch(
         `http://localhost:22986/demo/admin/room/${roomId}/users/${userId}`,
@@ -228,15 +230,31 @@ const Admin = () => {
           },
         }
       );
-      const data = await response.text();
-      if (!response.ok) throw new Error(data || "Không thể xóa user khỏi phòng");
-      // Cập nhật lại danh sách roomUsers sau khi xóa
-      setRoomUsers(roomUsers.filter((user) => user.id !== userId));
-      alert("User removed from room successfully");
+  
+      // Kiểm tra lỗi HTTP
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Không thể xóa user khỏi phòng");
+      }
+  
+      // Cập nhật lại danh sách phòng (rooms state) để loại bỏ userId
+      setRooms(prevRooms => 
+        prevRooms.map(room => {
+          if (room.id === roomId) {
+            // Lọc userId ra khỏi mảng userIds của phòng
+            const updatedUserIds = room.userIds.filter(id => id !== userId);
+            return { ...room, userIds: updatedUserIds };
+          }
+          return room;
+        })
+      );
+  
+      alert("Đã xóa user khỏi phòng thành công");
     } catch (err) {
       alert(err.message);
     }
   };
+  
 
   const [showUserModal, setShowUserModal] = useState(false);
 
@@ -422,10 +440,10 @@ const Admin = () => {
                 </button>
               </div>
               <div className="modal-body">
-  {roomUsers.length > 0 ? (
+              {roomUsers.length > 0 ? (
     <ul className="user-list">
-      {roomUsers.map((username) => (
-        <li className="user-item">
+      {roomUsers.map((username, index) => (
+        <li className="user-item" key={index}>
           <div className="user-info">
             <p className="user-name">
               <strong className="user-name">Tên:</strong> {username}
@@ -433,14 +451,15 @@ const Admin = () => {
           </div>
           <button
             className="remove-user-btn"
-            onClick={() => handleRemoveUser(selectedRoom.id, username)}
+            onClick={() => handleRemoveUser(selectedRoom.id, selectedRoom.userIds[index])}
           >
             👤❌
           </button>
         </li>
       ))}
     </ul>
-  ) : (
+) : 
+ (
     <p className="no-users">
       Không có người dùng nào trong phòng này
     </p>
