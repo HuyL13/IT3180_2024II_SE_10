@@ -17,80 +17,83 @@ export const AuthProvider = ({ children }) => {
   const location = useLocation();
   const { setNavbarType } = useNavbar();
 
-  // Định nghĩa các route ở phạm vi component
+  // Định nghĩa các route cho mỗi role (roleRoutes được xác định theo role ưu tiên)
   const roleRoutes = {
     admin: ["/admin", "/dashboard"],
     user: ["/resident"],
     guest: ["/guest", "/join-resident"],
   };
 
-  // Thêm các route chung cho tất cả role đã đăng nhập
   const commonAuthRoutes = ["/settings", "/account"];
 
+  // Lưu trữ user với roles là mảng, mặc định là guest
   const [user, setUser] = useState(() => {
     return JSON.parse(localStorage.getItem("user")) || { 
       isAuthenticated: false, 
-      role: "guest" 
+      roles: ["guest"] 
     };
   });
 
   useEffect(() => {
     localStorage.setItem("user", JSON.stringify(user));
-    setNavbarType(user.role);
+    if (user.isAuthenticated && Array.isArray(user.roles)) {
+      // Nếu có cả ADMIN và USER thì ưu tiên "user_admin"
+      if (user.roles.includes("ADMIN") && user.roles.includes("USER")) {
+        setNavbarType("user_admin");
+      } else {
+        // Nếu không, dùng role đầu tiên (chuyển về chữ thường)
+        setNavbarType(user.roles[0].toLowerCase());
+      }
+    } else {
+      setNavbarType("default");
+    }
   }, [user, setNavbarType]);
 
   useEffect(() => {
     const currentPath = location.pathname;
-
-    const publicRoutes = ["/settings","/login", "/signup", "/lobby", "/"];
+    const publicRoutes = ["/settings", "/login", "/signup", "/lobby", "/"];
     
-    // 1. Chuyển hướng nếu đã đăng nhập truy cập trang login/signup
+    // Nếu đã đăng nhập mà truy cập trang login/signup thì chuyển hướng về trang chủ của role đó
     if (user.isAuthenticated && ["/login", "/signup"].includes(currentPath)) {
-      navigate(roleRoutes[user.role][0], { replace: true });
+      navigate(roleRoutes[user.roles[0].toLowerCase()][0], { replace: true });
       return;
     }
 
-    // 2. Xử lý route yêu cầu đăng nhập
     if (commonAuthRoutes.some(route => currentPath.startsWith(route))) {
       if (!user.isAuthenticated) {
         navigate(`/login?redirect=${encodeURIComponent(currentPath)}`, { replace: true });
         return;
       }
-      // Cho phép truy cập luôn nếu đã đăng nhập
       return;
     }
 
-    // 3. Kiểm tra route theo role
     if (user.isAuthenticated) {
       const allowedRoutes = [
-        ...roleRoutes[user.role],
+        ...roleRoutes[user.roles[0].toLowerCase()],
         ...commonAuthRoutes
       ];
-
       const isAllowed = allowedRoutes.some(route => currentPath.startsWith(route));
-      
       if (!isAllowed) {
         navigate("/404", { replace: true });
         return;
       }
     }
 
-    // 4. Chặn truy cập trái phép
     if (!user.isAuthenticated && !publicRoutes.includes(currentPath)) {
       navigate("/login", { replace: true });
       return;
     }
-
   }, [user, location.pathname, navigate]);
 
-  const login = (role, redirectUrl) => {
-    const targetPath = redirectUrl || roleRoutes[role][0];
-    setUser({ isAuthenticated: true, role });
+  // Hàm login nhận vào mảng role, ví dụ: ["ADMIN", "USER"]
+  const login = (roles, redirectUrl) => {
+    const targetPath = redirectUrl || roleRoutes[roles[0].toLowerCase()][0];
+    setUser({ isAuthenticated: true, roles });
     navigate(targetPath, { replace: true });
   };
 
   const logout = () => {
-    setUser({ isAuthenticated: false, role: "guest" });
+    setUser({ isAuthenticated: false, roles: ["guest"] });
     navigate("/login", { replace: true });
     localStorage.removeItem("user");
   };
