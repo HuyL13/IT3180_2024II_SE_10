@@ -31,6 +31,7 @@ const FeeManagement = () => {
       if (!response.ok) throw new Error('Failed to fetch fees');
 
       const data = await response.json();
+      console.log(data);
       setFees(data);
     } catch (err) {
       setError(err.message);
@@ -186,8 +187,8 @@ const FeeManagement = () => {
 
   return (
     <div className="fee-management">
-      <div className="header">
-        <h2>Fee Management</h2>
+      <div className="fee-header">
+        <h2>Danh sách các khoản thu</h2>
         <button
           className="add-button"
           onClick={() => setShowAddModal(true)}
@@ -198,7 +199,7 @@ const FeeManagement = () => {
 
       <table>
         <thead>
-          <tr>
+          <tr className ="table-header">
             <th>Room #</th>
             <th>Description</th>
             <th>Amount</th>
@@ -232,13 +233,13 @@ const FeeManagement = () => {
                     setShowEditModal(true);
                   }}
                 >
-                  Edit
+                  &#128394;
                 </button>
                 <button 
                   className="delete-button"
                   onClick={() => handleDeleteFee(fee.id)}
                 >
-                  Delete
+                 &#128465;
                 </button>
               </td>
             </tr>

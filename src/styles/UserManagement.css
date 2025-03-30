@@ -2,7 +2,7 @@
 
 /* Main layout */
 .admin-overlay {
-    background-color: #f5f7fa;
+    
     min-height: 100vh;
     padding: 2rem;
   }
@@ -10,7 +10,7 @@
   .admin-layout {
     max-width: 1200px;
     margin: 0 auto;
-    background-color: white;
+   
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 2rem;
@@ -31,7 +31,10 @@
     gap: 1.5rem;
     margin-top: 1.5rem;
   }
-  
+  .add-button{
+    background-color:#27ae60;
+    border-radius:10px;
+  }
   /* User card */
   .user-card {
     background: white;

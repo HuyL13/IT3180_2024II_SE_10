@@ -4,15 +4,14 @@ import "../../../styles/Admin.css";
 const Admin = () => {
   const [roomId, setRoomId] = useState(null);
   const [users, setUsers] = useState([]);
-  
   const [rooms, setRooms] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [showUserInputModal, setShowUserInputModal] = useState(false);
-const [newUsername, setNewUsername] = useState("");
-const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
+  const [newUsername, setNewUsername] = useState("");
+  const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [loading, setLoading] = useState({
     page: true,
@@ -27,12 +26,10 @@ const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
   });
   const [roomUsers, setRoomUsers] = useState([]);
 
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading((prev) => ({ ...prev, initial: false }));
     }, 1500); // Simulate initial loading for 1.5s
-    
     return () => clearTimeout(timer);
   }, []);
 
@@ -52,7 +49,8 @@ const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
     setSelectedRoom(room);
     setShowModal(true);
   };
-//tao phong
+
+  // Tạo phòng mới
   const createRoom = async (roomData) => {
     try {
       const token = localStorage.getItem("authToken");
@@ -68,7 +66,6 @@ const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
           peopleCount: Number(roomData.peopleCount),
         }),
       });
-
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || "Tạo phòng thất bại");
@@ -79,13 +76,17 @@ const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
       throw error;
     }
   };
-//them phong
+
+  // Thêm phòng mới
   const handleAddRoom = async () => {
-    if (!newRoom.roomNumber.trim() || !newRoom.floor.trim() || !newRoom.peopleCount.trim()) {
+    if (
+      !newRoom.roomNumber.trim() ||
+      !newRoom.floor.trim() ||
+      !newRoom.peopleCount.trim()
+    ) {
       setError("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
-
     setLoading((prev) => ({ ...prev, form: true }));
     try {
       const createdRoom = await createRoom({
@@ -93,7 +94,6 @@ const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
         floor: newRoom.floor,
         peopleCount: newRoom.peopleCount,
       });
-
       setRooms([...rooms, { ...createdRoom, residents: [] }]);
       setNewRoom({ roomNumber: "", floor: "", peopleCount: "" });
       setShowForm(false);
@@ -104,27 +104,25 @@ const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
       setLoading((prev) => ({ ...prev, form: false }));
     }
   };
-//lay data moi phong
+
+  // Lấy danh sách phòng
   const fetchRooms = async () => {
     setLoading((prev) => ({ ...prev, page: true }));
     try {
       const token = localStorage.getItem("authToken");
       const response = await fetch("http://localhost:22986/demo/admin/room", {
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, 
+          "Authorization": `Bearer ${token}`,
         },
       });
-
       if (!response.ok) throw new Error("Lỗi khi lấy danh sách phòng");
-
       const data = await response.json();
       const formattedRooms = data.map((room) => ({
         ...room,
         floor: room.floor ?? "Chưa cập nhật",
         peopleCount: room.peopleCount ?? "Chưa cập nhật",
       }));
-
       setRooms(formattedRooms);
     } catch (error) {
       setError(error.message);
@@ -140,7 +138,8 @@ const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
       return () => clearInterval(intervalId);
     }
   }, [loading.initial]);
-//xoa phong
+
+  // Xóa phòng
   const deleteRoom = async (roomId) => {
     try {
       const token = localStorage.getItem("authToken");
@@ -151,78 +150,98 @@ const [selectedRoomNumber, setSelectedRoomNumber] = useState(null);
           "Authorization": `Bearer ${token}`,
         },
       });
-
       if (!response.ok) throw new Error("Delete failed");
       setRooms(rooms.filter((room) => room.id !== roomId));
     } catch (error) {
       setError(error.message);
     }
   };
-  // Thêm state mới cho modal người dùng
-const [showUserModal, setShowUserModal] = useState(false);
 
-// Sửa hàm showAllUser
-const showRoomUser = async (roomNumber) => {
-  try {
-    console.log("!");
-    const token = localStorage.getItem("authToken");
-    const response = await fetch(`http://localhost:22986/demo/admin/room/users?roomNumber=${roomNumber}`, { // Sửa endpoint
-      method: "GET",
-      headers: {
-        
-        "Accept": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-    });
-    console.log(`http://localhost:22986/demo/admin/room/users?roomId=${roomNumber}`);
-    console.log("1");
-    
-    console.log("2");
-    const data = await response.json();
-    console.log(roomNumber);
-    console.log("  ");
-    console.log(data);
-    setRoomUsers(data); // Giả sử API trả về {result: [...]}
-    console.log(data[0]);
-    setShowUserModal(true); // Sử dụng state riêng cho modal người dùng
-  } catch (error) {
-    console.log("sai");
-    setError(error.message);
-  }
-};
-const addRoomUser = async () => {
-  try {
-    const token = localStorage.getItem("authToken");
-    const response = await fetch(`http://localhost:22986/demo/admin/room/addUser`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        roomNumber: selectedRoomNumber,
-        username: newUsername, // Giả sử API cần username thay vì userId
-      }),
-    });
+  // Hiển thị modal danh sách người dùng của phòng
+  const showRoomUser = async (room) => {
+    try {
+      setSelectedRoom(room);
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(
+        `http://localhost:22986/demo/admin/room/users?roomNumber=${room.roomNumber}`,
+        {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await response.json();
+      console.log("đây là data",data);
+      setRoomUsers(data);
+      setShowUserModal(true);
+    } catch (error) {
+      setError(error.message);
+    }
+  };
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Thêm user thất bại");
+  // Hàm thêm user vào phòng
+  const addRoomUser = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`http://localhost:22986/demo/admin/room/addUser`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          roomNumber: selectedRoomNumber,
+          username: newUsername,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Thêm user thất bại");
+      // Cập nhật lại danh sách user
+      await showRoomUser({ roomNumber: selectedRoomNumber, id: selectedRoom?.id });
+      setNewUsername("");
+      setShowUserInputModal(false);
+    } catch (error) {
+      console.error("Lỗi khi thêm user:", error);
+      setError(error.message);
+    }
+  };
 
-    // Cập nhật lại danh sách user
-    await showRoomUser(selectedRoomNumber);
-    setNewUsername("");
-    setShowUserInputModal(false);
-  } catch (error) {
-    console.error("Lỗi khi thêm user:", error);
-    setError(error.message);
-  }
-};
-const handleOpenAddUser = (roomNumber) => {
-  setSelectedRoomNumber(roomNumber);
-  setShowUserInputModal(true);
-};
+  const handleOpenAddUser = (roomNumber) => {
+    setSelectedRoomNumber(roomNumber);
+    setShowUserInputModal(true);
+  };
+
+  // Hàm xóa user khỏi phòng
+  const handleRemoveUser = async (roomId, userId) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(
+        `http://localhost:22986/demo/admin/room/${roomId}/users/${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await response.text();
+      if (!response.ok) throw new Error(data || "Không thể xóa user khỏi phòng");
+      // Cập nhật lại danh sách roomUsers sau khi xóa
+      setRoomUsers(roomUsers.filter((user) => user.id !== userId));
+      alert("User removed from room successfully");
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const [showUserModal, setShowUserModal] = useState(false);
+
   return (
-    <div className="admin-overlay">
+    <div className="admin-overlay-1">
       {loading.initial && (
         <div className="initial-loading">
           <div className="spinner"></div>
@@ -236,7 +255,7 @@ const handleOpenAddUser = (roomNumber) => {
         </div>
       )}
 
-      <div className="admin-layout">
+      <div className="admin-layout-1">
         <h2 className="name">Danh sách phòng</h2>
         <div className="room-list">
           <div className="add-room" onClick={() => setShowForm(true)}>
@@ -249,9 +268,12 @@ const handleOpenAddUser = (roomNumber) => {
             <div key={room.id} className="room-card">
               <div className="room-detail">
                 <h4>Phòng {room.roomNumber || room.id}</h4>
-                <p><strong>Tầng:</strong> {room.floor}</p>
-                <p><strong>Sức chứa:</strong> {room.peopleCount} người</p>
-
+                <p>
+                  <strong>Tầng:</strong> {room.floor}
+                </p>
+                <p>
+                  <strong>Số người:</strong> {room.peopleCount} người
+                </p>
                 <button
                   className="btn btn-light"
                   onClick={() => handleShowModal(room)}
@@ -266,24 +288,24 @@ const handleOpenAddUser = (roomNumber) => {
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                 >
-                  &#x1F5D1; {/* Trash can icon */}
+                  &#x1F5D1;
                 </button>
                 <button
                   className="btn btn-light"
-                  onClick={() => showRoomUser(room.roomNumber)}
+                  onClick={() => showRoomUser(room)}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                 >
-                  &#x1F465; {/* Trash can icon */}
+                  &#x1F465;
                 </button>
                 <button
-  className="btn btn-light"
-  onClick={() => handleOpenAddUser(room.roomNumber)}
-  onMouseEnter={handleMouseEnter}
-  onMouseLeave={handleMouseLeave}
->
-  &#x2795;
-</button>
+                  className="btn btn-light"
+                  onClick={() => handleOpenAddUser(room.roomNumber)}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  &#x2795;
+                </button>
                 {showTooltip && (
                   <div
                     className="tooltip"
@@ -309,19 +331,25 @@ const handleOpenAddUser = (roomNumber) => {
                 type="text"
                 placeholder="Số phòng"
                 value={newRoom.roomNumber}
-                onChange={(e) => setNewRoom({ ...newRoom, roomNumber: e.target.value })}
+                onChange={(e) =>
+                  setNewRoom({ ...newRoom, roomNumber: e.target.value })
+                }
               />
               <input
                 type="number"
                 placeholder="Tầng"
                 value={newRoom.floor}
-                onChange={(e) => setNewRoom({ ...newRoom, floor: e.target.value })}
+                onChange={(e) =>
+                  setNewRoom({ ...newRoom, floor: e.target.value })
+                }
               />
               <input
                 type="number"
                 placeholder="Sức chứa"
                 value={newRoom.peopleCount}
-                onChange={(e) => setNewRoom({ ...newRoom, peopleCount: e.target.value })}
+                onChange={(e) =>
+                  setNewRoom({ ...newRoom, peopleCount: e.target.value })
+                }
               />
               <div className="form-actions">
                 <button
@@ -344,79 +372,124 @@ const handleOpenAddUser = (roomNumber) => {
         )}
 
         {showModal && selectedRoom && (
-          <div className="modal-overlay-admin" onClick={() => setShowModal(false)}>
+          <div
+            className="modal-overlay-admin"
+            onClick={() => setShowModal(false)}
+          >
             <div className="modal-content-admin" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h4>Chi tiết phòng {selectedRoom.roomNumber}</h4>
-                <button className="close-btn" onClick={() => setShowModal(false)}>&times;</button>
+                <button
+                  className="close-btn"
+                  onClick={() => setShowModal(false)}
+                >
+                  &times;
+                </button>
               </div>
               <div className="modal-body">
                 <div className="room-info">
-                  <p><strong>Số phòng:</strong> <span>{selectedRoom.roomNumber || "Chưa có thông tin"}</span></p>
-                  <p><strong>Tầng:</strong> <span>{selectedRoom.floor ?? "Chưa có thông tin"}</span></p>
-                  <p><strong>Sức chứa:</strong> <span>{selectedRoom.peopleCount ?? "Chưa có thông tin"}</span></p>
+                  <p>
+                    <strong>Số phòng:</strong>{" "}
+                    <span>{selectedRoom.roomNumber || "Chưa có thông tin"}</span>
+                  </p>
+                  <p>
+                    <strong>Tầng:</strong>{" "}
+                    <span>{selectedRoom.floor ?? "Chưa có thông tin"}</span>
+                  </p>
+                  <p>
+                    <strong>Số người:</strong>{" "}
+                    <span>{selectedRoom.peopleCount ?? "Chưa có thông tin"}</span>
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         )}
 
+        {showUserModal && (
+          <div
+            className="modal-overlay-admin"
+            onClick={() => setShowUserModal(false)}
+          >
+            <div className="modal-content-admin" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h4>Danh sách người dùng</h4>
+                <button
+                  className="close-btn"
+                  onClick={() => setShowUserModal(false)}
+                >
+                  &times;
+                </button>
+              </div>
+              <div className="modal-body">
+  {roomUsers.length > 0 ? (
+    <ul className="user-list">
+      {roomUsers.map((username) => (
+        <li className="user-item">
+          <div className="user-info">
+            <p className="user-name">
+              <strong className="user-name">Tên:</strong> {username}
+            </p>
+          </div>
+          <button
+            className="remove-user-btn"
+            onClick={() => handleRemoveUser(selectedRoom.id, username)}
+          >
+            👤❌
+          </button>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p className="no-users">
+      Không có người dùng nào trong phòng này
+    </p>
+  )}
+</div>
 
-{showUserModal && (
-  <div className="modal-overlay-admin" onClick={() => setShowUserModal(false)}>
-    <div className="modal-content-admin" onClick={(e) => e.stopPropagation()}>
-      <div className="modal-header">
-        <h4>Danh sách người dùng</h4>
-        <button className="close-btn" onClick={() => setShowUserModal(false)}>&times;</button>
-      </div>
-      <div className="modal-body">
-        {roomUsers.length > 0 ? (
-          <ul className="user-list">
-            {roomUsers.map((user) => (
-              <li key={user.id} className="user-item">
-                <div className="user-info">
-                  <p className ="name"><strong>Tên:</strong> {user}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="no-users">Không có người dùng nào trong phòng này</p>
+            </div>
+          </div>
         )}
-      </div>
-    </div>
-  </div>
-)}
-{showUserInputModal && (
-  <div className="modal-overlay-admin" onClick={() => setShowUserInputModal(false)}>
-    <div className="modal-content-admin" onClick={(e) => e.stopPropagation()}>
-      <div className="modal-header">
-        <h4>Thêm người dùng vào phòng {selectedRoomNumber}</h4>
-        <button className="close-btn" onClick={() => setShowUserInputModal(false)}>&times;</button>
-      </div>
-      <div className="modal-body">
-        <input
-          type="text"
-          placeholder="Nhập username"
-          value={newUsername}
-          onChange={(e) => setNewUsername(e.target.value)}
-          className="form-control mb-3"
-        />
-        {error && <div className="alert alert-danger">{error}</div>}
-        <div className="form-actions">
-          <button className="btn btn-success" onClick={addRoomUser}>
-            Thêm
-          </button>
-          <button className="btn btn-danger" onClick={() => setShowUserInputModal(false)}>
-            Hủy
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
 
-
+        {showUserInputModal && (
+          <div
+            className="modal-overlay-admin"
+            onClick={() => setShowUserInputModal(false)}
+          >
+            <div className="modal-content-admin" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h4>Thêm người dùng vào phòng {selectedRoomNumber}</h4>
+                <button
+                  className="close-btn"
+                  onClick={() => setShowUserInputModal(false)}
+                >
+                  &times;
+                </button>
+              </div>
+              <div className="modal-body">
+                <input
+                  type="text"
+                  placeholder="Nhập username"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  className="form-control mb-3"
+                />
+                {error && <div className="alert alert-danger">{error}</div>}
+                <div className="form-actions">
+                  <button className="btn btn-success" onClick={addRoomUser}>
+                    Thêm
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => setShowUserInputModal(false)}
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

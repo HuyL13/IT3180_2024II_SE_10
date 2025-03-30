@@ -4,54 +4,94 @@ import "../../../styles/Resident.css";
 
 const Resident = () => {
   const [fees, setFees] = useState([]);
+  const [room, setRoom] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showQR, setShowQR] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedFee, setSelectedFee] = useState(null);
 
-  // Dùng useRef để đảm bảo fetch chỉ chạy 1 lần
-  const isFetched = useRef(false);
+  // Dùng 2 biến ref riêng biệt để đảm bảo fetch chỉ chạy 1 lần cho mỗi API
+  const feesFetched = useRef(false);
+  const roomFetched = useRef(false);
 
   const fetchFees = async () => {
-    if (isFetched.current) return;
-    isFetched.current = true;
-  
+    if (feesFetched.current) return;
+    feesFetched.current = true;
+
     try {
       const token = localStorage.getItem("authToken");
       if (!token) throw new Error("Auth token not found!");
-  
+
       const response = await fetch(`http://localhost:22986/demo/users/unpaid`, {
         mode: "cors",
         method: "GET",
         headers: { 
           "Accept": "application/json",
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` },
+          "Authorization": `Bearer ${token}` 
+        },
       });
-  
-      
+
       const data = await response.json();
-      console.log(data);
-      console.log("API Response:", data);
-  
-      // Check if response data is an array
+      console.log("Fees API Response:", data);
+
       if (!Array.isArray(data)) {
-        throw new Error("API response is not an array");
-        
+        throw new Error("API response for fees is not an array");
       }
-  
-      setFees(data); // Data is confirmed to be an array
+
+      setFees(data);
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error("Fees Fetch error:", err);
       setError(err.message);
-      setFees([]); // Reset to empty array on error
+      setFees([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchRoom = async () => {
+    if (roomFetched.current) return;
+    roomFetched.current = true;
+
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) throw new Error("Auth token not found!");
+
+      // Giả sử endpoint trả về thông tin phòng là /demo/rooms
+      const response = await fetch(`http://localhost:22986/demo/users/room`, {
+        mode: "cors",
+        method: "GET",
+        headers: { 
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
+      });
+
+      const data = await response.json();
+      console.log("Room API Response:", data);
+
+      if (!Array.isArray(data)) {
+        throw new Error("API response for rooms is not an array");
+      }
+
+      setRoom(data);
+    } catch (err) {
+      console.error("Room Fetch error:", err);
+      setError(err.message);
+      setRoom([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchFees();
+  }, []);
+
+  useEffect(() => {
+    fetchRoom();
   }, []);
 
   const handleShowModal = (fee) => {
@@ -59,18 +99,18 @@ const Resident = () => {
     setShowModal(true);
   };
 
-  if (loading) return <div className="loading">Loading fees...</div>;
+  if (loading) return <div className="loading">Loading data...</div>;
   if (error) return <div className="error">Error: {error}</div>;
 
   return (
     <div className="resident-overlay">
       <div className="resident-layout">
         <div className="qr-code">
-          {showQR?null:
-          <button className="btn btn-primary" onClick={() => setShowQR(!showQR)}>
-            Hiển thị QR Code
-          </button>
-          }
+          {!showQR && (
+            <button className="btn btn-primary" onClick={() => setShowQR(!showQR)}>
+              Hiển thị QR Code
+            </button>
+          )}
           {showQR && (
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Superqr.svg/500px-Superqr.svg.png"
@@ -80,6 +120,23 @@ const Resident = () => {
           )}
         </div>
 
+        {/* Hiển thị thông tin phòng */}
+        <div className="room-info">
+          <h2 className ="text">Thông tin phòng</h2>
+          {room.length === 0 ? (
+            <p>Không có thông tin phòng.</p>
+          ) : (
+            room.map((r) => (
+              <div key={r.id} className="room-card">
+                <h3>Phòng: {r.roomNumber}</h3>
+                <p>Tầng: {r.floor}</p>
+                <p>Số người hiện tại: {r.peopleCount}</p>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Hiển thị danh sách phí chưa thanh toán */}
         <div className="resident-fees">
           <h2>Danh sách các khoản phí chưa thanh toán</h2>
           <div className="fee-list">
@@ -150,32 +207,30 @@ const Resident = () => {
           </div>
         </div>
       )}
+
       {/* Modal QR Code */}
       {showQR && (
-          <div className="modal-overlay" onClick={() => setShowQR(false)}>
-            <div className="modal-content qr-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h4>QR Code Thanh Toán</h4>
-                <button 
-                  className="close-btn" 
-                  onClick={() => setShowQR(false)}
-                >
-                  &times;
-                </button>
-              </div>
-              <div className="modal-body">
-                <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Superqr.svg/500px-Superqr.svg.png"
-                  alt="QR Code"
-                  className="qr-image"
-                />
-                <div className="payment-instruction">
-                  <p>Quét QR code để thanh toán qua ứng dụng ngân hàng</p>
-                </div>
+        <div className="modal-overlay" onClick={() => setShowQR(false)}>
+          <div className="modal-content qr-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h4>QR Code Thanh Toán</h4>
+              <button className="close-btn" onClick={() => setShowQR(false)}>
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Superqr.svg/500px-Superqr.svg.png"
+                alt="QR Code"
+                className="qr-image"
+              />
+              <div className="payment-instruction">
+                <p>Quét QR code để thanh toán qua ứng dụng ngân hàng</p>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 };

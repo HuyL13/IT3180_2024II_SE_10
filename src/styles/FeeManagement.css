@@ -140,4 +140,9 @@
     padding: 2rem;
     text-align: center;
   }
-  
+  .table-header{
+    color:#f44336;
+  }
+  .fee-header{
+    color: white !important;
+  }

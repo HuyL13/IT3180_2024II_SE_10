@@ -339,9 +339,9 @@ const UserManagement = () => {
       )}
 
       <div className="admin-layout">
-        <h2 className="name">User Management</h2>
+        <h2 className="name">Danh sách người dùng</h2>
         <button 
-          className="btn btn-add"
+          className="add-button btn btn-add"
           onClick={() => setShowCreateModal(true)}
         >
           Add New User

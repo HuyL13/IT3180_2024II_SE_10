@@ -14,6 +14,7 @@
     
   }
 .resident-fees{
+  color:#ffffff;
     width:20vw;
 
 }
@@ -108,4 +109,7 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
+}
+.text{
+  color:white !important;
 }

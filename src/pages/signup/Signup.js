@@ -61,7 +61,7 @@ const Signup = () => {
         },
         body: JSON.stringify({
           ...formData,
-          dob: new Date(formData.dob).toISOString().split('T')[0]
+          dob: new Date(formData.dob).toISOString().split("T")[0]
         })
       });
 
@@ -75,7 +75,7 @@ const Signup = () => {
         type: "success",
         content: "Đăng ký thành công! Đang chuyển hướng..."
       });
-      
+
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
       setMessage({
@@ -89,8 +89,8 @@ const Signup = () => {
 
   return (
     <div className="signup-container">
-      <h2>Đăng ký tài khoản</h2>
-      
+      <h2 className ="signup-header">Đăng ký tài khoản</h2>
+
       {message.content && (
         <div className={`alert ${message.type}`}>
           {message.content}

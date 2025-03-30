@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { FaCog } from "react-icons/fa";
 import "../../styles/NavbarUser_Admin.css";
@@ -6,12 +6,13 @@ import "../../styles/NavbarUser_Admin.css";
 const NavbarUser_Admin = ({ handleLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const modalRef = useRef(null);
+  const hideTimerRef = useRef(null);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
-  // Định nghĩa các route mặc định cho từng chế độ
+  // Các route và chế độ
   const adminDefaultRoute = "/admin/rooms";
   const userDefaultRoute = "/resident";
-
-  // Các route đặc trưng cho chế độ admin để kiểm tra location
   const adminRoutes = [
     "/admin/rooms",
     "/admin/users",
@@ -21,7 +22,6 @@ const NavbarUser_Admin = ({ handleLogout }) => {
     "/dashboard"
   ];
 
-  // Xác định chế độ ban đầu dựa trên location.pathname
   const getInitialMode = () => {
     return adminRoutes.some(route => location.pathname.startsWith(route))
       ? "admin"
@@ -29,9 +29,7 @@ const NavbarUser_Admin = ({ handleLogout }) => {
   };
 
   const [mode, setMode] = useState(getInitialMode());
-  const [showAdminDropdown, setShowAdminDropdown] = useState(false);
 
-  // Cập nhật mode khi location thay đổi
   useEffect(() => {
     const newMode = adminRoutes.some(route => location.pathname.startsWith(route))
       ? "admin"
@@ -39,10 +37,31 @@ const NavbarUser_Admin = ({ handleLogout }) => {
     if (newMode !== mode) {
       setMode(newMode);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  }, [location.pathname, mode]);
 
-  // Hàm chuyển đổi giữa 2 chế độ, đồng thời điều hướng đến trang mặc định của chế độ đó
+  // Đóng modal khi click bên ngoài hoặc nhấn Escape
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        setShowAdminModal(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setShowAdminModal(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
   const toggleMode = () => {
     if (mode === "user") {
       setMode("admin");
@@ -53,12 +72,28 @@ const NavbarUser_Admin = ({ handleLogout }) => {
     }
   };
 
+  // Xử lý khi hover: hủy timer nếu có và hiển thị modal
+  const handleMouseEnter = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
+    setShowAdminModal(true);
+  };
+
+  // Khi di chuột ra, đặt thời gian trễ 500ms trước khi ẩn modal
+  const handleMouseLeave = () => {
+    hideTimerRef.current = setTimeout(() => {
+      setShowAdminModal(false);
+    }, 500);
+  };
+
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-secondary">
       <div className="container">
         <NavLink to="/" className="navbar-brand">
-          User & Admin
+          User &amp; Admin
         </NavLink>
+
         <div className="navbar-nav ms-auto align-items-center">
           {/* Công tắc chuyển đổi chế độ */}
           <div className="form-check form-switch me-3">
@@ -74,63 +109,85 @@ const NavbarUser_Admin = ({ handleLogout }) => {
             </label>
           </div>
 
-          {/* Liên kết chung */}
           <NavLink to="/account" className="nav-link">
             Tài khoản
           </NavLink>
 
-          {/* Hiển thị các liên kết dựa trên chế độ */}
           {mode === "user" ? (
             <NavLink to="/resident" className="nav-link">
               Cư dân
             </NavLink>
           ) : (
             <>
-              {/* Dropdown cho admin */}
+              {/* Modal mở khi hover: sử dụng onMouseEnter và onMouseLeave */}
               <div
-                className="nav-item dropdown"
-                onMouseEnter={() => setShowAdminDropdown(true)}
-                onMouseLeave={() => setShowAdminDropdown(false)}
+                className="nav-item"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                style={{ position: "relative" }}
               >
-                <NavLink
-                  to="#"
-                  className="nav-link dropdown-toggle"
-                  id="adminDropdown"
-                  role="button"
-                  aria-expanded="false"
+                <button
+                  className="nav-link dropdown-toggle btn-modal-trigger"
+                  aria-label="Mở menu quản trị"
                 >
                   Quản trị
-                </NavLink>
-                {showAdminDropdown && (
-                  <ul className="dropdown-menu" aria-labelledby="adminDropdown">
-                    <li>
-                      <NavLink to="/admin/rooms" className="dropdown-item">
-                        Quản lý Phòng
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/admin/users" className="dropdown-item">
-                        Quản lý Người dùng
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/admin/fees" className="dropdown-item">
-                        Quản lí phí
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/admin/guests" className="dropdown-item">
-                        Phê duyệt
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/admin/reports" className="dropdown-item">
-                        Báo cáo
-                      </NavLink>
-                    </li>
-                  </ul>
+                </button>
+
+                {showAdminModal && (
+                  <div className="admin-modal-overlay">
+                    <div ref={modalRef} className="admin-modal-content">
+                      <div className="admin-modal-header">
+                        <h5>Menu Quản trị</h5>
+                        <button
+                          className="close-btn"
+                          onClick={() => setShowAdminModal(false)}
+                          aria-label="Đóng menu"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                      <div className="admin-modal-body">
+                        <NavLink 
+                          to="/admin/rooms" 
+                          className="modal-item"
+                          onClick={() => setShowAdminModal(false)}
+                        >
+                          Quản lý Phòng
+                        </NavLink>
+                        <NavLink
+                          to="/admin/users"
+                          className="modal-item"
+                          onClick={() => setShowAdminModal(false)}
+                        >
+                          Quản lý Người dùng
+                        </NavLink>
+                        <NavLink
+                          to="/admin/fees"
+                          className="modal-item"
+                          onClick={() => setShowAdminModal(false)}
+                        >
+                          Quản lí phí
+                        </NavLink>
+                        <NavLink
+                          to="/admin/guests"
+                          className="modal-item"
+                          onClick={() => setShowAdminModal(false)}
+                        >
+                          Phê duyệt
+                        </NavLink>
+                        <NavLink
+                          to="/admin/reports"
+                          className="modal-item"
+                          onClick={() => setShowAdminModal(false)}
+                        >
+                          Báo cáo
+                        </NavLink>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
+
               <NavLink to="/dashboard" className="nav-link">
                 Thống kê
               </NavLink>

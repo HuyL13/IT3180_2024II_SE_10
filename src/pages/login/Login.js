@@ -232,15 +232,15 @@ const Login = () => {
         </button>
       </form>
 
-      <div className="login-links">
+      
         <NavLink to="/signup">Đăng ký tài khoản</NavLink>
-        <button 
+        <NavLink 
           className="forgot-password-btn"
           onClick={() => setModalState(prev => ({ ...prev, show: true, step: 'email' }))}
         >
           Quên mật khẩu?
-        </button>
-      </div>
+        </NavLink>
+      
 
       {modalState.show && (
         <div className="modal-overlay" onClick={() => setModalState(prev => ({ ...prev, show: false }))}>

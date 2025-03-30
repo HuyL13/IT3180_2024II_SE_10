@@ -5,7 +5,7 @@ import { FaCog } from "react-icons/fa";
 
 const NavbarAdmin = ({ username, handleLogout }) => {
   const [showAdminDropdown, setShowAdminDropdown] = useState(false);
-
+  
   // Thêm meta tag động khi component mount
   useEffect(() => {
     const metaTag = document.createElement('meta');

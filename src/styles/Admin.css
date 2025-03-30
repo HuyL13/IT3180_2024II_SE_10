@@ -1,55 +1,115 @@
-.room-detail {
-  width: 25vw;
-  background: #ffffff;
-  padding: 15px;
+/* Global Styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Admin Overlay and Layout */
+.admin-overlay-1,
+.admin-layout-1 {
+  width: 100vw;
+  min-height: 100vh;
+  padding: 20px;
+  
+}
+.user-name{
+  color:aqua!important;
+}
+/* Header */
+.name {
+  font-size: 24px;
+  font-weight: bold;
+  color: white !important;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Room List */
+.room-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  margin: 10px 0;
+}
+
+/* Room Card */
+.room-card {
+  background: #fff;
   border-radius: 8px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   border-left: 5px solid #007bff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  height: 25vh;
+}
+
+/* Room Detail inside Card */
+.room-detail {
+  width: 100%;
+  text-align: center;
 }
 
 .room-detail h4 {
-  margin: 0;
+  margin: 0 0 10px;
   color: #007bff;
 }
 
 .room-detail p {
   margin: 5px 0;
   font-size: 14px;
+  color: #333;
 }
 
-.room-card {
-  width: 30vw;
-  height:20vh;
-  display: flex;
-  flex-direction:center;
+/* Các nút chức năng trong card */
+.btn {
+  margin: 5px;
+  background: #f8f9fa;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
 
-  align-items: center;
+.btn:hover {
+  background: #e9ecef;
+}
+
+/* Add Room Card (thêm phòng) */
+.add-room {
+  cursor: pointer;
+}
+
+.add-room-detail {
+  display: flex;
   justify-content: center;
-  margin: 10px 0;
+  align-items: center;
+  width: 100%;
+  height: 23vh;
+  background: rgba(233, 230, 230, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-left: 5px solid #007bff;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.room-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top:10px;
-  margin-bottom:10px;
+.add-room-detail:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  border-left-style: dashed;
 }
 
-.admin-overlay, .admin-layout {
-  width: 100vw;
-  height: 100vh;
-  padding: 20px;
+.add-room-icon {
+  font-size: 10vw;
+  color: #007bff;
 }
 
-.add-button {
-  display: flex;
-  justify-content: flex-end;
-  margin: 10px 5vw;
-  padding: 5px;
-}
-
-/* Modal */
+/* Modal Overlay */
 .modal-overlay-admin {
   position: fixed;
   top: 0;
@@ -63,12 +123,14 @@
   z-index: 1000;
 }
 
+/* Modal Content */
 .modal-content-admin {
-  background: white;
+  background: #fff;
   padding: 20px;
   border-radius: 8px;
   width: 30vw;
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   animation: modalSlideIn 0.3s ease-out;
 }
 
@@ -83,6 +145,7 @@
   }
 }
 
+/* Modal Header */
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -92,10 +155,11 @@
 .close-btn {
   background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 24px;
   cursor: pointer;
 }
 
+/* Form Overlay */
 .form-overlay {
   position: fixed;
   top: 0;
@@ -106,20 +170,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1000;
 }
 
+/* Form Content */
 .form-content {
-  background: white;
+  background: #fff;
   padding: 20px;
   border-radius: 8px;
   width: 30vw;
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .form-content h3 {
   margin-bottom: 15px;
 }
 
+/* Form Actions */
 .form-actions {
   display: flex;
   justify-content: space-between;
@@ -130,15 +198,14 @@
 .tooltip {
   position: fixed;
   background: rgba(0, 0, 0, 0.8);
-  color: white;
+  color: #fff;
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 12px;
   pointer-events: none;
   z-index: 9999;
-  transform: translateY(5px);
-  animation: tooltipFadeIn 10s ease-out;
   white-space: nowrap;
+  animation: tooltipFadeIn 0.3s ease-out;
 }
 
 @keyframes tooltipFadeIn {
@@ -152,87 +219,19 @@
   }
 }
 
-/* Card thêm phòng giống các card phòng khác */
-.add-room-card {
-  cursor: pointer;
-  
-  
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-  border-left: 5px solid #007bff;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  margin: 10px 0;
-  transition: all 0.3s ease;
-}
-
-.add-room-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
-  border-left-style: dashed;
-}
-
-
-
-
-.name{
-  color:#007bff;
-}
-
-.add-room-detail {
-  display: flex;
-  justify-content: center; 
-  align-items: center; 
-  width: 25vw;
-  height: 23vh;
-  background: rgba(233, 230, 230, 0.3);
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-  border-left: 5px solid #007bff;
-}
-
-.add-room-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  text-align: center;
-  font-size: 10vw;
-  color: #007bff;
-  transition: all 0.3s ease;
-  
-  /* Đảm bảo icon là một flex item để căn giữa chính xác */
-  flex-shrink: 0;
-}
-/* Hiệu ứng loading ban đầu */
-.initial-loading {
+/* Loading Styles */
+.initial-loading,
+.page-loading {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
-  z-index: 1000;
-}
-
-/* Loading khi fetch dữ liệu */
-.page-loading {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  background: rgba(255,255,255,0.9);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
   z-index: 1000;
 }
 
@@ -249,7 +248,10 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-.name{
-  color:black;
-  z-index:1000;
+
+/* Error Message */
+.error-message {
+  color: #dc3545;
+  text-align: center;
+  margin: 10px 0;
 }
